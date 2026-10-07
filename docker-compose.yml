@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    # 견적서를 메모리에 저장하므로 인스턴스는 1개만 실행해야 한다.
+    restart: unless-stopped
