@@ -1,11 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { searchItems, createQuote } from '../api';
 import { useDraftStore } from '../stores/draft';
 import { formatWon } from '../utils/format';
-
-const SEARCH_MIN_LENGTH = 3;
 
 const router = useRouter();
 const draft = useDraftStore();
@@ -21,23 +19,40 @@ const creating = ref(false);
 
 const canCreate = computed(() => draft.quoteNo.trim() !== '' && draft.lines.length > 0);
 
+// 입력할 때마다(잠깐 멈추면) 자동으로 검색해서 미리보기 목록을 보여준다.
+const DEBOUNCE_MS = 200;
+let timer = null;
+let requestSeq = 0; // 늦게 도착한 이전 응답이 최신 결과를 덮어쓰지 않도록 요청 번호로 구분한다.
+
 async function search() {
+  clearTimeout(timer);
+  const seq = (requestSeq += 1);
+  const q = query.value.trim();
   searchError.value = '';
-  results.value = null;
-  if (query.value.trim().length < SEARCH_MIN_LENGTH) {
-    searchError.value = `아이템 넘버를 ${SEARCH_MIN_LENGTH}자 이상 입력하세요.`;
+  if (!/[0-9A-Za-z가-힣]/.test(q)) {
+    results.value = null;
+    searching.value = false;
     return;
   }
   searching.value = true;
   try {
-    results.value = await searchItems(query.value);
-    qtys.value = Object.fromEntries(results.value.map((i) => [i.itemNo, 1]));
+    const found = await searchItems(q);
+    if (seq !== requestSeq) return;
+    results.value = found;
+    // 이미 입력한 수량은 유지하고, 새로 나온 품목만 1 로 초기화한다.
+    qtys.value = Object.fromEntries(found.map((i) => [i.itemNo, qtys.value[i.itemNo] ?? 1]));
   } catch (e) {
-    searchError.value = e.message;
+    if (seq === requestSeq) searchError.value = e.message;
   } finally {
-    searching.value = false;
+    if (seq === requestSeq) searching.value = false;
   }
 }
+
+watch(query, () => {
+  clearTimeout(timer);
+  timer = setTimeout(search, DEBOUNCE_MS);
+});
+onBeforeUnmount(() => clearTimeout(timer));
 
 function addToDraft(item) {
   const n = Number(qtys.value[item.itemNo]);
@@ -97,13 +112,13 @@ async function create() {
   <section class="card">
     <h2>2. 품목 조회</h2>
     <form class="row" @submit.prevent="search">
-      <input v-model="query" placeholder="아이템 넘버 (3자 이상, 일부만 입력 가능)" style="min-width: 280px" autofocus />
+      <input v-model="query" placeholder="아이템 넘버 (일부만 입력해도 자동 검색)" class="grow" autofocus />
       <button type="submit" :disabled="searching">조회</button>
     </form>
     <p v-if="searchError" class="error">{{ searchError }}</p>
 
     <p v-if="results && !results.length" class="empty">검색 결과가 없습니다.</p>
-    <table v-if="results && results.length" style="margin-top: 16px">
+    <table v-if="results && results.length" class="stack" style="margin-top: 16px">
       <thead>
         <tr>
           <th>아이템 넘버</th><th>품목명</th><th>규격명</th><th class="num">가격</th><th class="num">수량</th><th></th>
@@ -111,11 +126,11 @@ async function create() {
       </thead>
       <tbody>
         <tr v-for="item in results" :key="item.itemNo">
-          <td>{{ item.itemNo }}</td>
-          <td>{{ item.name }}</td>
-          <td>{{ item.spec }}</td>
-          <td class="num">{{ formatWon(item.price) }}</td>
-          <td class="num">
+          <td data-label="아이템 넘버">{{ item.itemNo }}</td>
+          <td data-label="품목명">{{ item.name }}</td>
+          <td data-label="규격명">{{ item.spec }}</td>
+          <td class="num" data-label="가격">{{ formatWon(item.price) }}</td>
+          <td class="num" data-label="수량">
             <input
               v-model.number="qtys[item.itemNo]" type="number" min="1" step="1" style="width: 80px"
               @keyup.enter="addToDraft(item)"
@@ -131,7 +146,7 @@ async function create() {
     <h2>3. 견적 품목</h2>
     <p v-if="!draft.lines.length" class="empty">추가된 품목이 없습니다.</p>
     <template v-else>
-      <table>
+      <table class="stack">
         <thead>
           <tr>
             <th>아이템 넘버</th><th>품목명</th><th>규격명</th>
@@ -140,17 +155,17 @@ async function create() {
         </thead>
         <tbody>
           <tr v-for="l in draft.lines" :key="l.itemNo">
-            <td>{{ l.itemNo }}</td>
-            <td>{{ l.name }}</td>
-            <td>{{ l.spec }}</td>
-            <td class="num">{{ formatWon(l.price) }}</td>
-            <td class="num">
+            <td data-label="아이템 넘버">{{ l.itemNo }}</td>
+            <td data-label="품목명">{{ l.name }}</td>
+            <td data-label="규격명">{{ l.spec }}</td>
+            <td class="num" data-label="단가">{{ formatWon(l.price) }}</td>
+            <td class="num" data-label="수량">
               <input
                 :value="l.qty" type="number" min="1" step="1" style="width: 80px"
                 @change="setQty(l, $event.target.value)"
               />
             </td>
-            <td class="num">{{ formatWon(l.price * l.qty) }}</td>
+            <td class="num" data-label="금액">{{ formatWon(l.price * l.qty) }}</td>
             <td class="num"><button class="link" @click="draft.remove(l.itemNo)">삭제</button></td>
           </tr>
         </tbody>

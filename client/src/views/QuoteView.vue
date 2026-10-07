@@ -37,7 +37,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <table>
+    <table class="stack">
       <thead>
         <tr>
           <th>No</th><th>품목명</th><th>규격명</th>
@@ -46,12 +46,12 @@ onMounted(async () => {
       </thead>
       <tbody>
         <tr v-for="l in quote.lines" :key="l.no">
-          <td>{{ l.no }}</td>
-          <td>{{ l.name }}</td>
-          <td>{{ l.spec }}</td>
-          <td class="num">{{ l.qty }}</td>
-          <td class="num">{{ formatWon(l.unitPrice) }}</td>
-          <td class="num">{{ formatWon(l.amount) }}</td>
+          <td data-label="No">{{ l.no }}</td>
+          <td data-label="품목명">{{ l.name }}</td>
+          <td data-label="규격명">{{ l.spec }}</td>
+          <td class="num" data-label="수량">{{ l.qty }}</td>
+          <td class="num" data-label="단가">{{ formatWon(l.unitPrice) }}</td>
+          <td class="num" data-label="금액">{{ formatWon(l.amount) }}</td>
         </tr>
       </tbody>
     </table>

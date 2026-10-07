@@ -94,3 +94,43 @@ a.btn {
 a.btn.secondary { background: var(--surface); color: var(--primary); }
 a.btn.secondary:hover { background: #eff4ff; }
 .required { color: var(--danger); }
+
+.grow { flex: 1 1 200px; min-width: 0; }
+.totals { max-width: 100%; }
+
+/* 모바일: 표의 각 행을 카드로 쌓아 가로 스크롤이 생기지 않게 한다. (td 의 data-label 이 항목 이름) */
+@media (max-width: 640px) {
+  .container { padding: 16px 12px 48px; }
+  .card { padding: 14px; }
+
+  table.stack,
+  table.stack tbody,
+  table.stack tr,
+  table.stack td { display: block; width: 100%; }
+  table.stack thead { display: none; }
+  table.stack tr {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin-bottom: 10px;
+  }
+  table.stack td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 5px 0;
+    border: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  table.stack td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: left;
+  }
+  table.stack td:last-child { justify-content: flex-end; }
+  table.stack td:last-child:not([data-label])::before { content: none; }
+}

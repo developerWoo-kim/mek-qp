@@ -3,7 +3,7 @@ import { items } from '../data/items.js';
 // 하이픈 등 구분 문자를 무시하고 비교한다. (예: 20300636 -> 203-00636)
 const normalize = (s) => String(s).toUpperCase().replace(/[^0-9A-Z가-힣]/g, '');
 
-export const SEARCH_MIN_LENGTH = 3;
+export const SEARCH_MIN_LENGTH = 1;
 
 export const isSearchable = (query) => normalize(query).length >= SEARCH_MIN_LENGTH;
 
