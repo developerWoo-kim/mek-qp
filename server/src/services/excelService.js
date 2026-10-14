@@ -135,6 +135,10 @@ const formatIssueDate = (iso) => {
   return `${d.getFullYear()} . ${pad(d.getMonth() + 1)} . ${pad(d.getDate())} .`;
 };
 
+function formatWorksheetName(siteName) {
+  return siteName.replace(/[\\/*?:\[\]]/g, '_').replace(/^'+|'+$/g, '').slice(0, 31);
+}
+
 // 템플릿의 빈 합계 칸에는 글꼴이 지정돼 있지 않으므로 품목 금액 칸의 글꼴을 따라가게 한다.
 // 값이 커서 칸 폭을 넘으면 엑셀이 ### 로 표시하므로, 넘칠 때는 글자를 줄여서 맞추도록 shrinkToFit 을 건다.
 function setNumber(cell, value, refCell) {
@@ -155,6 +159,8 @@ export async function buildQuoteXlsx(quote, { fontName } = {}) {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(TEMPLATE_PATH);
   const ws = wb.worksheets[0];
+  const worksheetName = formatWorksheetName(quote.recipient);
+  if (worksheetName) ws.name = worksheetName;
   ws._rows.length = Math.min(ws._rows.length, M.printArea.lastRow + 5); // 템플릿 끝에 남은 빈 행 제거
 
   const { itemRow, columns: col } = M.items;

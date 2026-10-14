@@ -22,5 +22,5 @@ export default {
   // 템플릿에서 병합되어 있고 품목 아래에 위치한 영역 (삽입 시 함께 이동)
   // 오른쪽 상단 텍스트 상자(작성일자/견적번호/회사 정보)의 글자를 표 머리글에서 띄우는 아래쪽 여백 (EMU, 12700 = 1pt)
   textBoxBottomInsetEmu: 114300,
-  printArea: { firstCol: 'A', lastCol: 'H', lastRow: 47 },
+  printArea: { firstCol: 'A', lastCol: 'H', lastRow: 43 },
 };
